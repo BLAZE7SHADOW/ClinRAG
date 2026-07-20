@@ -8,3 +8,14 @@ wheels/
 
 # Virtual environments
 .venv
+
+# OS
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints
+
+# Personal / local-only notes
+project objective.md
+leaning-notes
+Posting_data_sapmple.txt
