@@ -28,3 +28,19 @@
     splitting cut through it). Confirmed it fixed the Table 4 row-splitting issue, though
     the column header itself is still detached (an upstream Docling export bug, not
     fixable at the chunking layer). Both findings logged in Notes.md.
+
+  ## 2026-07-23
+
+  - Built embeddings + dense retrieval baseline (`embed.py`): compared Amazon Titan vs
+    Cohere on Bedrock, verified real invoke access (not just listing) before picking
+    Cohere Embed v4. Hit a rate limit embedding 600 chunks one at a time; fixed by
+    batching 90 texts per API call. FAISS `IndexFlatL2` as the naive baseline index.
+    Test query returned the correct FDA max-dose passage.
+  - Built hybrid retrieval (`hybrid.py`): added BM25 keyword search alongside dense
+    search, combined via reciprocal rank fusion. Compared dense-only vs hybrid on the
+    same test query — hybrid surfaced a real dosing chunk that dense-only missed
+    entirely, confirming the theory that pure semantic search can lose exact-keyword
+    matches. One example only; Saturday's RAGAS harness will measure this properly.
+  - Decided not to add reranking today (it was flagged as out of scope) — revisit after
+    RAGAS gives real numbers to justify it, instead of assuming it's needed.
+  - Added README.md and ARCHITECTURE.md reflecting current pipeline state.

@@ -65,3 +65,20 @@ Built one FAISS index (`IndexFlatL2`, brute-force nearest-neighbor — the naive
 
 ## Known gap, not fixed yet
 This is dense-only — pure "meaning" search, no keyword matching. Weak spot: exact drug names, dose numbers, product codes sometimes match better on literal text than on semantic similarity. That's what hybrid retrieval (BM25 + dense, next) is meant to cover.
+
+# Day 4 — Hybrid retrieval (hybrid.py)
+
+Added BM25 keyword search (`rank_bm25`) alongside the existing dense/FAISS search, combined with reciprocal rank fusion (RRF) — merges two ranked lists using rank *position* only, not raw scores, since BM25 scores and vector distances aren't on the same scale and can't just be added together.
+
+## Test: dense-only vs hybrid, same query
+"What is the maximum daily dose of metformin?" — top-3 from each, same 600 chunks.
+
+Real difference: hybrid promoted a chunk dense-only didn't surface in its top-3 at all — a dosing-initiation passage with a specific starting dose. Likely BM25 catching an exact keyword match ("dose"/"metformin"/"daily") that dense search ranked lower on pure meaning similarity.
+
+Confirms the Day 3 theory: dense-only can miss chunks that match well on literal words but less well on "meaning" alone. One query, one anecdote though — not proof hybrid is better overall. That's what Saturday's RAGAS harness is for: measuring this across a real question set instead of eyeballing one example.
+
+## Known inefficiency, not fixed
+`hybrid.py` re-embeds all 600 chunks every time it's run standalone (~7 Bedrock calls). Fine for a baseline, worth fixing later with saved/cached embeddings once we're not just proving the pipeline works.
+
+## Reranking
+Not added today. Decided to wait for Saturday's RAGAS numbers before adding it — only worth the complexity if the measured results actually show a gap it would close.
