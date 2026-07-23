@@ -82,3 +82,12 @@ Confirms the Day 3 theory: dense-only can miss chunks that match well on literal
 
 ## Reranking
 Not added today. Decided to wait for Saturday's RAGAS numbers before adding it — only worth the complexity if the measured results actually show a gap it would close.
+
+## Generation (generate.py)
+Wired in an LLM call to turn retrieved chunks into an actual answer — the last piece of Friday's task. Used Claude Haiku 4.5 via Bedrock: fast/cheap, matters because tomorrow's RAGAS harness will call this many times (multiple questions × dense-only vs. hybrid configs).
+
+Quirk: newer Anthropic models on Bedrock reject the plain model ID for on-demand calls — needed the cross-region "inference profile" ID (`us.anthropic.claude-haiku-4-5-20251001-v1:0`) instead. Confirmed by testing, not guessed; the plain ID's error message named the exact profile ID needed.
+
+Prompt explicitly instructs: answer using ONLY the retrieved excerpts, say so if the excerpts don't contain the answer rather than guessing. This is the actual grounding mechanism in RAG — without it, the LLM would just answer from training memory regardless of what got retrieved.
+
+Test: same metformin max-dose query, full pipeline (hybrid retrieval → generation). Answer correctly said 2,000 mg, correctly framed it as the combination product's metformin component, and didn't add anything not present in the retrieved excerpts. Working end-to-end RAG loop.

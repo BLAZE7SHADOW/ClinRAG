@@ -44,3 +44,9 @@
   - Decided not to add reranking today (it was flagged as out of scope) — revisit after
     RAGAS gives real numbers to justify it, instead of assuming it's needed.
   - Added README.md and ARCHITECTURE.md reflecting current pipeline state.
+  - Wired in LLM generation (`generate.py`) using Claude Haiku 4.5 via Bedrock, completing
+    the full retrieve-then-generate loop. Had to use a cross-region inference profile ID
+    instead of the plain model ID (newer Anthropic models on Bedrock require it for
+    on-demand calls). Prompt explicitly restricts the model to answering only from
+    retrieved excerpts. End-to-end test on the metformin max-dose question produced a
+    correct, grounded answer. This completes Friday's full planned scope.
