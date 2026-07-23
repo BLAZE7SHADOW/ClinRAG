@@ -49,3 +49,19 @@ Spot-checked a middle `chunk_fixed` chunk on metformin.md (36 of 72) — landed 
 Result: the Mild/Moderate/Severe rows now stay together in one chunk. That specific bug (numbers with no row context) is gone.
 
 Still broken: the actual column header (Cmax, Tmax, Renal Clearance) landed in the *previous* chunk as plain text, not inside the table block — because Docling's export dropped it outside the `|...|` syntax in the first place. No amount of chunking logic can glue that back on. It's an extraction bug, not a chunking one. Logged, not fixing today.
+
+# Day 3 — Embeddings + dense retrieval (embed.py)
+
+## Model choice
+Checked what's actually available and invokable through Bedrock (not just listed) — Amazon Titan v1/v2, Cohere Embed v3/v4, TwelveLabs (video, not relevant). Anthropic has no embedding models at all, on any platform. OpenAI and Qwen have embedding models but aren't on Bedrock — using them would mean a separate account/API key or self-hosting, outside the AWS setup already working.
+
+Picked **Cohere Embed v4** — newest, strongest text option actually available, verified working with a real `invoke-model` call before committing to it (1536-dim vectors came back). Cohere's third-party, so Bedrock required an AWS Marketplace subscription step first (confirmed $0 purchase amount — usage is billed separately, per token, not the subscription itself).
+
+## Bug: throttled after ~1 request
+First version called the API once per chunk — 600 chunks, 600 sequential calls, hit `ThrottlingException` almost immediately. Fix: Cohere's API accepts a batch of texts in a single call. Rewrote to send chunks in batches of 90 instead of one at a time — collapsed ~600 calls down to 7, no more throttling.
+
+## First real test
+Built one FAISS index (`IndexFlatL2`, brute-force nearest-neighbor — the naive baseline) across all 600 chunks from all 5 files. Asked: "What is the maximum daily dose of metformin?" Got back the actual FDA max-dose language (2,000 mg) plus real dosing/bioavailability passages — no keyword matching, pure vector similarity, and it found the right answer. Working end-to-end dense retrieval baseline.
+
+## Known gap, not fixed yet
+This is dense-only — pure "meaning" search, no keyword matching. Weak spot: exact drug names, dose numbers, product codes sometimes match better on literal text than on semantic similarity. That's what hybrid retrieval (BM25 + dense, next) is meant to cover.
